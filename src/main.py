@@ -34,6 +34,7 @@ def home_page_function(datetime_str: str) -> str:
         return json.dumps(error_response, ensure_ascii=False, indent=2)
 
 
+
 if __name__ == "__main__":
     test_datetime = "2025-04-09 14:30:00"
     result = home_page_function(test_datetime)
