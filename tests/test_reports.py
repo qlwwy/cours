@@ -1,90 +1,70 @@
 import json
+import unittest
 
 import pandas as pd
 
-from src.reports import get_expenses_by_weekday
+from src.reports import get_expenses_by_category
 
 
-def test_get_expenses_by_weekday_success():
-    data = pd.DataFrame({
-        'Дата операции': ['2024-04-01', '2024-04-02', '2024-04-03', '2024-04-04', '2024-04-05'],
-        'Сумма': [200, 150, 300, 250, 100]
-    })
+class TestGetExpensesByCategory(unittest.TestCase):
 
-    expected_result = {
-        "results_count": 5,
-        "results": [
-            {"День недели": "Monday", "Сумма": 200},
-            {"День недели": "Tuesday", "Сумма": 150},
-            {"День недели": "Wednesday", "Сумма": 300},
-            {"День недели": "Thursday", "Сумма": 250},
-            {"День недели": "Friday", "Сумма": 100}
-        ]
-    }
+    def setUp(self):
+        """Настройка данных для тестов"""
+        data = {
+            "date": ["2025-01-15", "2025-02-20", "2025-03-10", "2025-03-25", "2025-04-05"],
+            "category": ["Food", "Food", "Transport", "Food", "Food"],
+            "amount": [100, 200, 50, 150, 100],
+        }
+        self.df = pd.DataFrame(data)
 
-    result_json = get_expenses_by_weekday(data)
-    result = json.loads(result_json)
+    def test_expenses_by_category(self):
+        """Тест с обычными данными"""
+        start_date = "2025-01-01"
+        category = "Food"
+        result = get_expenses_by_category(self.df, category, start_date)
 
-    assert result == expected_result
+        expected_result = [{"category": "Food", "amount": 450}]
 
+        self.assertEqual(json.loads(result), expected_result)
 
-def test_get_expenses_by_weekday_empty_dataframe():
-    data = pd.DataFrame({
-        'Дата операции': [],
-        'Сумма': []
-    })
+    def test_no_data_for_category(self):
+        """Тест, когда нет данных по категории"""
+        start_date = "2025-01-01"
+        category = "Transport"
+        result = get_expenses_by_category(self.df, category, start_date)
 
-    result_json = get_expenses_by_weekday(data)
-    result = json.loads(result_json)
+        expected_result = [{"category": "Transport", "amount": 50}]
 
-    expected_result = {"error": "Передан пустой DataFrame"}
+        self.assertEqual(json.loads(result), expected_result)
 
-    assert result == expected_result
+    def test_no_data_for_date_range(self):
+        """Тест, когда нет данных по датам"""
+        start_date = "2024-01-01"
+        category = "Food"
+        result = get_expenses_by_category(self.df, category, start_date)
 
+        expected_result = {"error": "Нет данных для выбранной категории и периода."}
 
-def test_get_expenses_by_weekday_no_date():
-    data = pd.DataFrame({
-        'Дата операции': ['2024-04-01', '2024-04-02', '2024-04-03', '2024-04-04', '2024-04-05'],
-        'Сумма': [200, 150, 300, 250, 100]
-    })
-    result_json = get_expenses_by_weekday(data)
-    result = json.loads(result_json)
-    assert result is not None
-    assert 'results_count' in result
-    assert 'results' in result
+        self.assertEqual(json.loads(result), expected_result)
 
+    def test_empty_dataframe(self):
+        """Тест с пустым DataFrame"""
+        empty_df = pd.DataFrame(columns=["date", "category", "amount"])
+        start_date = "2025-01-01"
+        category = "Food"
+        result = get_expenses_by_category(empty_df, category, start_date)
 
-def test_get_expenses_by_weekday_with_date_filter():
-    data = pd.DataFrame({
-        'Дата операции': ['2024-04-01', '2024-04-02', '2024-04-03', '2024-04-04', '2024-04-05'],
-        'Сумма': [200, 150, 300, 250, 100]
-    })
+        expected_result = {"error": "Нет данных для выбранной категории и периода."}
 
-    filter_date = '2024-04-03'
+        self.assertEqual(json.loads(result), expected_result)
 
-    expected_result = {
-        "results_count": 3,
-        "results": [
-            {"День недели": "Monday", "Сумма": 200},
-            {"День недели": "Tuesday", "Сумма": 150},
-            {"День недели": "Wednesday", "Сумма": 300}
-        ]
-    }
-
-    result_json = get_expenses_by_weekday(data, date=filter_date)
-    result = json.loads(result_json)
-
-    assert result == expected_result
+    def test_invalid_date_format(self):
+        """Тест с ошибкой в формате даты"""
+        start_date = "2025/01/01"
+        category = "Food"
+        result = get_expenses_by_category(self.df, category, start_date)
+        self.assertIn("time data", json.loads(result)["error"])
 
 
-def test_get_expenses_by_weekday_error():
-    data = pd.DataFrame({
-        'Дата операции': ['invalid_date', 'another_invalid_date'],
-        'Сумма': [200, 150]
-    })
-
-    result_json = get_expenses_by_weekday(data)
-    result = json.loads(result_json)
-
-    assert 'error' in result
-    assert "Invalid comparison between dtype=datetime64[ns] and date" in result['error']
+if __name__ == "__main__":
+    unittest.main()

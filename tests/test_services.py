@@ -5,6 +5,7 @@ import pandas as pd
 
 from src.services import load_operations_data, simple_search
 
+
 @patch("pandas.read_excel")
 def test_load_operations_data_success(mock_read_excel):
     mock_df = pd.DataFrame({"Дата операции": ["2024-01-01"], "Сумма": [100]})

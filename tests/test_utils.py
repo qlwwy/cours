@@ -1,18 +1,15 @@
 import json
 import os
-import pytest
 from datetime import datetime, timedelta
+from unittest.mock import mock_open, patch
+
 import pandas as pd
-from unittest.mock import patch, mock_open
-from src.utils import (
-    get_date_range,
-    filtered_operations,
-    greetings,
-    info_about_operations,
-    top5_tran,
-    currency_rates,
-    sorted_by_month
-)
+import pytest
+
+from src.utils import (currency_rates, filtered_operations, get_date_range,
+                       greetings, info_about_operations, sorted_by_month,
+                       top5_tran)
+
 
 def test_get_date_range():
     date_str = "2023-10-15 12:00:00"

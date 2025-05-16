@@ -1,10 +1,13 @@
-import pytest
 from datetime import datetime
-import pandas as pd
 from unittest.mock import patch
-from src.views import parse_datetime, fetch_data_from_api, analyze_data, load_operations_data
 
-# Тест для функции parse_datetime
+import pandas as pd
+import pytest
+
+from src.views import (analyze_data, fetch_data_from_api, load_operations_data,
+                       parse_datetime)
+
+
 def test_parse_datetime_valid():
     date_str = "2024-01-01 12:00:00"
     result = parse_datetime(date_str)
@@ -13,18 +16,19 @@ def test_parse_datetime_valid():
     assert result.month == 1
     assert result.day == 1
 
+
 def test_parse_datetime_invalid():
     with pytest.raises(ValueError):
         parse_datetime("invalid-date")
 
-# Тест для функции fetch_data_from_api
+
 def test_fetch_data_from_api():
     test_date = datetime(2024, 1, 1)
     result = fetch_data_from_api(test_date)
     assert isinstance(result, list)
     assert all('value' in record and 'date' in record for record in result)
 
-# Тест для функции analyze_data
+
 def test_analyze_data_valid():
     raw_data = [
         {"value": 100, "date": "2024-01-01"},
@@ -34,6 +38,7 @@ def test_analyze_data_valid():
     assert result["average_value"] == 150
     assert result["records_count"] == 2
 
+
 def test_analyze_data_missing_value_column():
     raw_data = [
         {"amount": 100, "date": "2024-01-01"}
@@ -42,7 +47,7 @@ def test_analyze_data_missing_value_column():
     assert result["average_value"] is None
     assert result["records_count"] == 1
 
-# Тест для функции load_operations_data
+
 @patch('src.views.pd.read_excel')
 def test_load_operations_data_valid(mock_read_excel):
     df_mock = pd.DataFrame({
@@ -54,6 +59,7 @@ def test_load_operations_data_valid(mock_read_excel):
     assert isinstance(result, pd.DataFrame)
     assert "Дата операции" in result.columns
 
+
 @patch('src.views.pd.read_excel')
 def test_load_operations_data_missing_column(mock_read_excel):
     df_mock = pd.DataFrame({
@@ -63,4 +69,3 @@ def test_load_operations_data_missing_column(mock_read_excel):
 
     with pytest.raises(ValueError):
         load_operations_data("fake_path.xlsx")
-

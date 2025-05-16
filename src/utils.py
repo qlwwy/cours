@@ -1,13 +1,13 @@
 import json
-import os
 import logging
+import os
+import sys
 from datetime import datetime, timedelta
-from typing import Optional, Tuple, List, Dict
+from typing import Dict, List, Optional, Tuple
 
+import pandas as pd
 import requests
 from dotenv import load_dotenv
-import sys
-import pandas as pd
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
