@@ -29,16 +29,21 @@ def simple_search(query: str, file_path: str) -> str:
         query_lower = query.strip().lower()
         df = load_operations_data(file_path)
 
-        matched = df[df.apply(
-            lambda row: row.astype(str).str.contains(query_lower, case=False, na=False).any(), axis=1
-        )]
+        matched = df[
+            df.apply(
+                lambda row: row.astype(str)
+                .str.contains(query_lower, case=False, na=False)
+                .any(),
+                axis=1,
+            )
+        ]
 
         logger.info(f"Найдено совпадений: {len(matched)}")
 
         response: dict[str, Any] = {
             "query": query,
             "results_count": len(matched),
-            "results": matched.to_dict(orient="records")
+            "results": matched.to_dict(orient="records"),
         }
 
         return json.dumps(response, ensure_ascii=False)

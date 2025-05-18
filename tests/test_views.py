@@ -1,71 +1,84 @@
+import json
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
 
-from src.views import (analyze_data, fetch_data_from_api, load_operations_data,
-                       parse_datetime)
+from src.views import (fetch_currency_rates, fetch_stock_prices, get_greeting,
+                       home_page_function, load_user_settings,
+                       process_operations_data)
 
 
-def test_parse_datetime_valid():
-    date_str = "2024-01-01 12:00:00"
-    result = parse_datetime(date_str)
-    assert isinstance(result, datetime)
-    assert result.year == 2024
-    assert result.month == 1
-    assert result.day == 1
+def test_get_greeting_morning():
+    with patch("src.views.datetime") as mock_datetime:
+        mock_datetime.now.return_value.hour = 6
+        assert get_greeting() == "Доброе утро"
 
 
-def test_parse_datetime_invalid():
-    with pytest.raises(ValueError):
-        parse_datetime("invalid-date")
+def test_get_greeting_afternoon():
+    with patch("src.views.datetime") as mock_datetime:
+        mock_datetime.now.return_value.hour = 13
+        assert get_greeting() == "Добрый день"
 
 
-def test_fetch_data_from_api():
-    test_date = datetime(2024, 1, 1)
-    result = fetch_data_from_api(test_date)
-    assert isinstance(result, list)
-    assert all('value' in record and 'date' in record for record in result)
+def test_get_greeting_evening():
+    with patch("src.views.datetime") as mock_datetime:
+        mock_datetime.now.return_value.hour = 19
+        assert get_greeting() == "Добрый вечер"
 
 
-def test_analyze_data_valid():
-    raw_data = [
-        {"value": 100, "date": "2024-01-01"},
-        {"value": 200, "date": "2024-01-01"}
-    ]
-    result = analyze_data(raw_data)
-    assert result["average_value"] == 150
-    assert result["records_count"] == 2
+def test_get_greeting_night():
+    with patch("src.views.datetime") as mock_datetime:
+        mock_datetime.now.return_value.hour = 23
+        assert get_greeting() == "Доброй ночи"
 
 
-def test_analyze_data_missing_value_column():
-    raw_data = [
-        {"amount": 100, "date": "2024-01-01"}
-    ]
-    result = analyze_data(raw_data)
-    assert result["average_value"] is None
-    assert result["records_count"] == 1
+def test_load_user_settings_valid():
+    with patch("builtins.open", new_callable=MagicMock) as mock_open:
+        mock_open.return_value.__enter__.return_value.read.return_value = (
+            '{"user_currencies": ["USD", "EUR"], "user_stocks": ["AAPL", "AMZN"]}'
+        )
+        result = load_user_settings("fake_path.json")
+        assert result == {
+            "user_currencies": ["USD", "EUR"],
+            "user_stocks": ["AAPL", "AMZN"],
+        }
 
 
-@patch('src.views.pd.read_excel')
-def test_load_operations_data_valid(mock_read_excel):
-    df_mock = pd.DataFrame({
-        "Дата операции": ["2024-01-01", "2024-01-02"]
-    })
+def test_fetch_currency_rates():
+    with patch("src.views.requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"rates": {"USD": 1.0, "EUR": 0.85}}
+        mock_get.return_value = mock_response
+
+        result = fetch_currency_rates(["USD", "EUR"])
+        assert result == {"USD": 1.0, "EUR": 0.85}
+
+
+def test_fetch_stock_prices():
+    with patch("src.views.requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+
+        result = fetch_stock_prices(["AAPL"])
+        assert result == {"AAPL": "N/A"}
+
+
+@patch("src.views.pd.read_excel")
+def test_process_operations_data_valid(mock_read_excel):
+    df_mock = pd.DataFrame(
+        {
+            "Номер карты": ["1234", "5678"],
+            "Сумма": [100, 200],
+            "Кешбэк": [1, 2],
+            "Дата операции": ["2024-01-01", "2024-01-02"],
+        }
+    )
     mock_read_excel.return_value = df_mock
 
-    result = load_operations_data("fake_path.xlsx")
-    assert isinstance(result, pd.DataFrame)
-    assert "Дата операции" in result.columns
-
-
-@patch('src.views.pd.read_excel')
-def test_load_operations_data_missing_column(mock_read_excel):
-    df_mock = pd.DataFrame({
-        "Другой столбец": ["2024-01-01"]
-    })
-    mock_read_excel.return_value = df_mock
-
-    with pytest.raises(ValueError):
-        load_operations_data("fake_path.xlsx")
+    result = process_operations_data("fake_path.xlsx", "2024-01-01", "2024-01-02")
+    assert isinstance(result, dict)
+    assert len(result["card_data"]) == 2
+    assert len(result["top_transactions"]) == 2

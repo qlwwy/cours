@@ -12,8 +12,7 @@ from dotenv import load_dotenv
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -47,8 +46,11 @@ def filtered_operations(time: str) -> List[Dict]:
         end_date = pd.to_datetime(end_date_str, dayfirst=True)
 
         filtered_op = [
-            op for op in operations_df
-            if start_date <= pd.to_datetime(op["Дата операции"], dayfirst=True) <= end_date
+            op
+            for op in operations_df
+            if start_date
+            <= pd.to_datetime(op["Дата операции"], dayfirst=True)
+            <= end_date
         ]
         logger.info(f"Отфильтровано операций: {len(filtered_op)}")
         return filtered_op
@@ -83,7 +85,7 @@ def top5_tran(operations: List[Dict]) -> List[Dict]:
         sorted_ops = sorted(
             operations,
             key=lambda x: x.get("Сумма операции с округлением", 0),
-            reverse=True
+            reverse=True,
         )
         return sorted_ops[:5]
     except Exception as e:
@@ -114,7 +116,9 @@ def currency_rates(user_settings_path: str) -> Tuple[List[Dict], List[Dict]]:
         resp_stocks = requests.get(stocks_url).json()
 
         for stock in resp_stocks.get("data", []):
-            stocks_info.append({"stock": stock["symbol"], "price": float(stock["close"])})
+            stocks_info.append(
+                {"stock": stock["symbol"], "price": float(stock["close"])}
+            )
 
         return currency_info, stocks_info
 
@@ -123,7 +127,9 @@ def currency_rates(user_settings_path: str) -> Tuple[List[Dict], List[Dict]]:
         return [], []
 
 
-def sorted_by_month(transactions: pd.DataFrame, date: Optional[str] = None) -> pd.DataFrame:
+def sorted_by_month(
+    transactions: pd.DataFrame, date: Optional[str] = None
+) -> pd.DataFrame:
     try:
         if date is None:
             date = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
@@ -136,8 +142,8 @@ def sorted_by_month(transactions: pd.DataFrame, date: Optional[str] = None) -> p
         )
 
         filtered_df = transactions[
-            (transactions["Дата платежа"] >= start_date) &
-            (transactions["Дата платежа"] <= end_date)
+            (transactions["Дата платежа"] >= start_date)
+            & (transactions["Дата платежа"] <= end_date)
         ]
         return filtered_df
 

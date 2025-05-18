@@ -1,70 +1,61 @@
 import json
-import unittest
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
+import pytest
 
-from src.reports import get_expenses_by_category
+from src.reports import get_expenses_by_day_of_week
 
 
-class TestGetExpensesByCategory(unittest.TestCase):
-
-    def setUp(self):
-        """Настройка данных для тестов"""
-        data = {
-            "date": ["2025-01-15", "2025-02-20", "2025-03-10", "2025-03-25", "2025-04-05"],
-            "category": ["Food", "Food", "Transport", "Food", "Food"],
-            "amount": [100, 200, 50, 150, 100],
+def test_get_expenses_by_day_of_week_success():
+    # Создаем мок для pd.read_excel
+    df_mock = pd.DataFrame(
+        {
+            "date": [
+                "2025-01-01",
+                "2025-01-02",
+                "2025-01-03",
+                "2025-01-04",
+                "2025-01-05",
+            ],
+            "amount": [100, 200, 150, 300, 250],
         }
-        self.df = pd.DataFrame(data)
+    )
 
-    def test_expenses_by_category(self):
-        """Тест с обычными данными"""
-        start_date = "2025-01-01"
-        category = "Food"
-        result = get_expenses_by_category(self.df, category, start_date)
+    with patch("pandas.read_excel", return_value=df_mock):
+        result = get_expenses_by_day_of_week("fake_path.xlsx", "2025-01-01")
+        result_dict = json.loads(result)
 
-        expected_result = [{"category": "Food", "amount": 450}]
-
-        self.assertEqual(json.loads(result), expected_result)
-
-    def test_no_data_for_category(self):
-        """Тест, когда нет данных по категории"""
-        start_date = "2025-01-01"
-        category = "Transport"
-        result = get_expenses_by_category(self.df, category, start_date)
-
-        expected_result = [{"category": "Transport", "amount": 50}]
-
-        self.assertEqual(json.loads(result), expected_result)
-
-    def test_no_data_for_date_range(self):
-        """Тест, когда нет данных по датам"""
-        start_date = "2024-01-01"
-        category = "Food"
-        result = get_expenses_by_category(self.df, category, start_date)
-
-        expected_result = {"error": "Нет данных для выбранной категории и периода."}
-
-        self.assertEqual(json.loads(result), expected_result)
-
-    def test_empty_dataframe(self):
-        """Тест с пустым DataFrame"""
-        empty_df = pd.DataFrame(columns=["date", "category", "amount"])
-        start_date = "2025-01-01"
-        category = "Food"
-        result = get_expenses_by_category(empty_df, category, start_date)
-
-        expected_result = {"error": "Нет данных для выбранной категории и периода."}
-
-        self.assertEqual(json.loads(result), expected_result)
-
-    def test_invalid_date_format(self):
-        """Тест с ошибкой в формате даты"""
-        start_date = "2025/01/01"
-        category = "Food"
-        result = get_expenses_by_category(self.df, category, start_date)
-        self.assertIn("time data", json.loads(result)["error"])
+        assert isinstance(result_dict, list)
+        assert len(result_dict) > 0
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_get_expenses_by_day_of_week_empty_data():
+    # Создаем мок для pd.read_excel с пустым DataFrame
+    df_mock = pd.DataFrame({"date": [], "amount": []})
+
+    with patch("pandas.read_excel", return_value=df_mock):
+        result = get_expenses_by_day_of_week("fake_path.xlsx", "2025-01-01")
+        result_dict = json.loads(result)
+
+        assert result_dict["error"] == "Нет данных для выбранного периода."
+
+
+def test_get_expenses_by_day_of_week_invalid_date_format():
+    with patch(
+        "pandas.read_excel",
+        return_value=pd.DataFrame({"date": ["invalid_date"], "amount": [100]}),
+    ):
+        result = get_expenses_by_day_of_week("fake_path.xlsx", "invalid_date")
+        result_dict = json.loads(result)
+
+        assert "error" in result_dict
+
+
+def test_get_expenses_by_day_of_week_file_not_found():
+    with patch("pandas.read_excel", side_effect=FileNotFoundError("File not found")):
+        result = get_expenses_by_day_of_week("non_existent_file.xlsx", "2025-01-01")
+        result_dict = json.loads(result)
+
+        assert "error" in result_dict

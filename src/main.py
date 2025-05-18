@@ -20,9 +20,9 @@ def home_page_function(datetime_str: str) -> str:
             "data": {
                 "api_data": api_data,
                 "processed_data": processed_data,
-                "operations_data": operations_data.to_dict(orient='records')
+                "operations_data": operations_data.to_dict(orient="records"),
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         return json.dumps(response, ensure_ascii=False, indent=2)
@@ -31,7 +31,7 @@ def home_page_function(datetime_str: str) -> str:
         error_response = {
             "status": "error",
             "message": str(e),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
         return json.dumps(error_response, ensure_ascii=False, indent=2)
 
