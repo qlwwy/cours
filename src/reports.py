@@ -2,9 +2,9 @@ import json
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Callable, Optional
+import os
 
 import pandas as pd
-
 
 def save_report(file_name: Optional[str] = None):
     """
@@ -16,6 +16,12 @@ def save_report(file_name: Optional[str] = None):
         @wraps(func)
         def wrapper(*args, **kwargs) -> str:
             result: str = func(*args, **kwargs)
+
+            # Проверяем, является ли результат ошибкой
+            result_dict = json.loads(result)
+            if "error" in result_dict:
+                print(f"Ошибка: {result_dict['error']}")
+                return result
 
             nonlocal file_name
             if file_name is None:
@@ -38,12 +44,28 @@ def save_report(file_name: Optional[str] = None):
         return decorator(file_name)
     return decorator
 
-
 @save_report
 def get_expenses_by_day_of_week(file_path: str, start_date: str) -> str:
     """Функция для получения отчета о тратах по дням недели за трехмесячный период."""
     try:
-        df = pd.read_excel(file_path)
+        # Используем абсолютный путь к файлу
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        operations_data_path = os.path.join(base_dir, "data", "operations.xlsx")
+
+        df = pd.read_excel(operations_data_path)
+
+        # Проверяем наличие столбца с датами
+        if 'date' not in df.columns:
+            # Если столбец называется по-другому, например, 'Дата операции'
+            if 'Дата операции' in df.columns:
+                df['date'] = df['Дата операции']
+            else:
+                return json.dumps(
+                    {"error": "Столбец с датами не найден."},
+                    ensure_ascii=False,
+                    indent=4,
+                )
+
         start_date_dt = datetime.strptime(start_date, "%Y-%m-%d")
         end_date = start_date_dt + timedelta(days=90)
         df["date"] = pd.to_datetime(df["date"])
@@ -69,10 +91,8 @@ def get_expenses_by_day_of_week(file_path: str, start_date: str) -> str:
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False, indent=4)
 
-
 if __name__ == "__main__":
-    file_path = "operations.xlsx"
     start_date = "2025-01-01"
-    result = get_expenses_by_day_of_week(file_path, start_date)
+    result = get_expenses_by_day_of_week("data/operations.xlsx", start_date)
 
     print(result)
