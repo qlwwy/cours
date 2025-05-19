@@ -66,9 +66,11 @@ def get_expenses_by_day_of_week(file_path: str, start_date: str) -> str:
                     indent=4,
                 )
 
+        # Указываем формат даты при преобразовании
+        df["date"] = pd.to_datetime(df["date"], format='%d.%m.%Y %H:%M:%S', dayfirst=True)
+
         start_date_dt = datetime.strptime(start_date, "%Y-%m-%d")
         end_date = start_date_dt + timedelta(days=90)
-        df["date"] = pd.to_datetime(df["date"])
 
         filtered_df = df[(df["date"] >= start_date_dt) & (df["date"] <= end_date)]
 
