@@ -93,7 +93,6 @@ def get_expenses_by_day_of_week(file_path: str, start_date: str) -> str:
     except Exception as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False, indent=4)
 
-
 if __name__ == "__main__":
     start_date = "2025-01-01"
     result = get_expenses_by_day_of_week("data/operations.xlsx", start_date)
