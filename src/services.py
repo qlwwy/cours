@@ -7,7 +7,6 @@ import pandas as pd
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 def load_operations_data(file_path: str) -> pd.DataFrame:
     """Загружает данные из Excel-файла и возвращает DataFrame."""
     logger.info(f"Загрузка данных из файла: {file_path}")
@@ -20,7 +19,6 @@ def load_operations_data(file_path: str) -> pd.DataFrame:
     except Exception as e:
         logger.error(f"Ошибка при загрузке данных: {e}")
         raise
-
 
 def simple_search(query: str, file_path: str) -> str:
     """Выполняет простой поиск по всем полям файла на соответствие текстовому запросу."""
@@ -51,7 +49,6 @@ def simple_search(query: str, file_path: str) -> str:
     except Exception as e:
         logger.error(f"Ошибка при поиске: {e}")
         return json.dumps({"error": str(e)}, ensure_ascii=False)
-
 
 if __name__ == "__main__":
     user_query = input("Введите запрос для поиска: ").title()

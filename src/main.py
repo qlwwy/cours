@@ -3,9 +3,11 @@ from datetime import datetime
 
 import pandas as pd
 
-from src.utils import (analyze_data, fetch_data_from_api, load_operations_data,
-                       parse_datetime)
-
+from src.utils import (
+    analyze_data,
+    fetch_data_from_api,
+    parse_datetime,
+)
 
 def home_page_function(datetime_str: str) -> str:
     """Основная функция для страницы «Главная»"""
@@ -34,7 +36,6 @@ def home_page_function(datetime_str: str) -> str:
             "timestamp": datetime.now().isoformat(),
         }
         return json.dumps(error_response, ensure_ascii=False, indent=2)
-
 
 if __name__ == "__main__":
     test_datetime = "2025-04-09 14:30:00"

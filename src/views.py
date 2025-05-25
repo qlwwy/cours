@@ -1,7 +1,7 @@
 import json
 import logging
-import os
 from datetime import datetime
+import os
 
 import pandas as pd
 import requests
@@ -38,7 +38,10 @@ def fetch_currency_rates(currencies: list) -> list:
         response = requests.get("https://api.exchangerate-api.com/v4/latest/USD")
         response.raise_for_status()
         data = response.json()
-        return [{"currency": currency, "rate": data["rates"].get(currency, "N/A")} for currency in currencies]
+        return [
+            {"currency": currency, "rate": data["rates"].get(currency, "N/A")}
+            for currency in currencies
+        ]
     except Exception as err:
         logger.error(f"Ошибка при получении курсов валют: {err}")
         raise
@@ -103,7 +106,6 @@ def home_page_function(datetime_str: str) -> str:
         operations_data = process_operations_data(
             operations_data_path, start_date, end_date
         )
-
         # Преобразование данных о картах
         cards = [
             {
@@ -147,7 +149,8 @@ def home_page_function(datetime_str: str) -> str:
         }
         return json.dumps(error_response, ensure_ascii=False, indent=2)
 
-if __name__ == "__main__":
+
+if __name__ == "main":
     test_datetime = "2025-04-09 14:30:00"
     result = home_page_function(test_datetime)
     print(result)
