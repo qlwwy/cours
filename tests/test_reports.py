@@ -1,38 +1,47 @@
 import json
-from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
-import pytest
 
-from src.reports import get_expenses_by_day_of_week
-
-
-def test_get_expenses_by_day_of_week_empty_data():
-    # Создаем мок для pd.read_excel с пустым DataFrame
-    df_mock = pd.DataFrame({"date": [], "amount": []})
-
-    with patch("pandas.read_excel", return_value=df_mock):
-        result = get_expenses_by_day_of_week("fake_path.xlsx", "2025-01-01")
-        result_dict = json.loads(result)
-
-        assert result_dict["error"] == "Нет данных для выбранного периода."
+from src.services import load_operations_data, simple_search
 
 
-def test_get_expenses_by_day_of_week_invalid_date_format():
-    with patch(
-        "pandas.read_excel",
-        return_value=pd.DataFrame({"date": ["invalid_date"], "amount": [100]}),
-    ):
-        result = get_expenses_by_day_of_week("fake_path.xlsx", "invalid_date")
-        result_dict = json.loads(result)
+@patch("pandas.read_excel")
+def test_load_operations_data_success(mock_read_excel):
+    mock_df = pd.DataFrame({"Дата операции": ["2024-01-01"], "Сумма": [100]})
+    mock_read_excel.return_value = mock_df
 
-        assert "error" in result_dict
+    df = load_operations_data("fake_path.xlsx")
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) == 1
 
 
-def test_get_expenses_by_day_of_week_file_not_found():
-    with patch("pandas.read_excel", side_effect=FileNotFoundError("File not found")):
-        result = get_expenses_by_day_of_week("non_existent_file.xlsx", "2025-01-01")
-        result_dict = json.loads(result)
+@patch("src.services.load_operations_data")
+def test_simple_search_found(mock_load_data):
+    test_data = pd.DataFrame(
+        {
+            "Дата операции": ["2024-01-01", "2024-01-02"],
+            "Описание": ["Покупка кофе", "Покупка книг"],
+        }
+    )
+    mock_load_data.return_value = test_data
 
-        assert "error" in result_dict
+    result_json = simple_search("кофе", "fake_path.xlsx")
+    result = json.loads(result_json)
+
+    assert "results_count" in result
+    assert result["results_count"] == 1
+    assert result["results"][0]["Описание"] == "Покупка кофе"
+
+
+@patch("src.services.load_operations_data")
+def test_simple_search_error(mock_load_data):
+    mock_load_data.side_effect = Exception(
+        "[Errno 2] No such file or directory: 'fake_path.xlsx'"
+    )
+
+    result_json = simple_search("что-то", "fake_path.xlsx")
+    result = json.loads(result_json)
+
+    assert "error" in result
+    assert "[Errno 2] No such file or directory" in result["error"]
